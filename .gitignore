@@ -1,1 +1,2 @@
-/static/images/*
+# アップロード画像だけを無視する
+static/images/
