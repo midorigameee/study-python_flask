@@ -1,2 +1,3 @@
 # アップロード画像だけを無視する
-static/images/
+*.jpg
+*.png
