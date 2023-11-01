@@ -2,7 +2,10 @@ from flask import Flask, render_template, request, url_for, redirect
 import os
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='./static')
+
+IMG_FOLDER = os.path.join("static", "images")
+app.config["UPLOAD_FOLDER"] = IMG_FOLDER
 
 @app.route('/')
 def index():
@@ -26,9 +29,10 @@ def upload():
 
 @app.route('/uploaded_file/<string:filename>')
 def uploaded_file(filename):
-    return render_template('uploaded_file.html', filename=filename)
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    return render_template('uploaded_file.html', filename=filename, filepath=filepath)
 
 
 if __name__ == "__main__":
-    # app.run(host='0.0.0.0')
-    app.run(host='localhost')   # ローカル開発環境用の設定
+    app.run()
+    # app.run(host='localhost')   # ローカル開発環境用の設定
