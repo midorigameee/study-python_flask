@@ -1,6 +1,7 @@
 {% include "header.html" %}
 <h1>ファイルアップロード完了</h1>
 <h2>{{filename}}</h2>
-<img src="{{ url_for('static', filename=filename) }}" alt="uploaded image">
+<img class="img-thumbnail" src="{{ url_for('static', filename=filename) }}" alt="uploaded image">
 <br>
 <a href="/">Topに戻る</a>
+{% include "footer.html" %}
