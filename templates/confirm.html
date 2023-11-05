@@ -1,5 +1,7 @@
 {% include "header.html" %}
-<h1>Your files.</h1>
+<div class="d-flex justify-content-center">
+    <h1>Your files.</h1>
+</div>
 <div class="container">
     <div class="row">
         {% for i in range(list_len) %}
@@ -12,5 +14,7 @@
         {% endfor %}
     </div>
 </div>
-<a href="/">Topに戻る</a>
+<div class="d-flex justify-content-center">
+    <a class="mt-5" href="/">Topに戻る</a>
+</div>
 {% include "footer.html" %}
