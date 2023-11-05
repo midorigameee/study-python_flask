@@ -35,7 +35,7 @@ def uploaded_file(filename):
         print("For Windows:")
         filepath = converUrlForHtml(filepath)
         print("filepath : " + filepath)
-        
+
     return render_template('uploaded_file.html', filename=filename, filepath=filepath)
 
 
