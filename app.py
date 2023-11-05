@@ -39,6 +39,47 @@ def uploaded_file(filename):
     return render_template('uploaded_file.html', filename=filename, filepath=filepath)
 
 
+@app.route('/confirm', methods=['GET'])
+def confirm():
+    filename_list = os.listdir(os.path.join("static", app.config["UPLOAD_FOLDER"]))
+    print("filename_list : ")
+
+    filename_list = checkImgList(filename_list)
+    print(filename_list)
+
+
+    filepath_list = []
+
+    for fname in filename_list:
+        fpath = os.path.join(app.config["UPLOAD_FOLDER"], fname)
+
+        if os.name == "nt":
+            print("For Windows:")
+            fpath = converUrlForHtml(fpath)
+        
+        filepath_list.append(fpath)
+
+    print("filepath_list : ")
+    print(filepath_list)
+
+    return render_template(
+        'confirm.html',
+        list_len=len(filename_list),
+        filename_list=filename_list,
+        filepath_list=filepath_list
+    )
+
+
+def checkImgList(img_list):
+    checked_list = []
+
+    for i, img in enumerate(img_list):
+        if os.path.splitext(img)[1] == '.jpg':  
+            checked_list.append(img)
+
+    return checked_list
+
+
 def converUrlForHtml(url):
     return url.replace("\\", "/")
 
