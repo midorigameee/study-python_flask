@@ -9,8 +9,7 @@ app.config["UPLOAD_FOLDER"] = "images"
 @app.route('/')
 def index():
     return render_template(
-        "index.html",
-        title="Top Page"
+        "index.html"
         )
 
 
@@ -28,68 +27,52 @@ def upload():
 
 @app.route('/uploaded_file/<string:filename>')
 def uploaded_file(filename):
-    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    print("filename : " + filename)
-    print("filepath : " + filepath)
+    filepath = createImgPath(filename)
 
-    if os.name == "nt":
-        print("For Windows:")
-        filepath = converUrlForHtml(filepath)
-        print("filepath : " + filepath)
-
-    return render_template('uploaded_file.html', filename=filename, filepath=filepath)
-
-
-@app.route('/confirm', methods=['GET'])
-def confirm():
-    filename_list = os.listdir(os.path.join("static", app.config["UPLOAD_FOLDER"]))
-    print("filename_list : ")
-
-    filename_list = checkImgList(filename_list)
-    print(filename_list)
-
-
-    filepath_list = []
-
-    for fname in filename_list:
-        fpath = os.path.join(app.config["UPLOAD_FOLDER"], fname)
-
-        if os.name == "nt":
-            print("For Windows:")
-            fpath = converUrlForHtml(fpath)
-        
-        filepath_list.append(fpath)
-
-    print("filepath_list : ")
-    print(filepath_list)
+    print("[UPLOAD]filename : {}".format(filename))
+    print("[UPLOAD]filepath : {}".format(filepath))
 
     return render_template(
-        'confirm.html',
+        'uploaded_file.html',
+        filename=filename,
+        filepath=filepath
+        )
+
+
+@app.route('/view', methods=['GET'])
+def view():
+    # static/images以下のデータを全て取得する
+    filename_list = checkImgExtension(os.listdir(os.path.join("static", app.config["UPLOAD_FOLDER"])))
+    filepath_list = []
+    for fname in filename_list:
+        fpath = createImgPath(fname)
+        filepath_list.append(fpath)
+
+    print("[VIEW]filename_list : {}".format(filename_list))
+    print("[VIEW]filepath_list : {}".format(filepath_list))
+
+    return render_template(
+        'view.html',
         list_len=len(filename_list),
         filename_list=filename_list,
         filepath_list=filepath_list
-    )
+        )
 
 
 @app.route('/detail', methods=['GET'])
 def detail():
     filename = request.args["filename"]
-    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    print("filename : " + filename)
-    print("filepath : " + filepath)
+    filepath = createImgPath(filename)
 
-    if os.name == "nt":
-        print("For Windows:")
-        filepath = converUrlForHtml(filepath)
-        print("filepath : " + filepath)
+    print("[DETAIL]filename : " + filename)
+    print("[DETAIL]filepath : " + filepath)
 
     path_for_info = os.path.join("static", filepath)
-
     updated_time = getFileUpdatedTime(path_for_info)
     created_time = getFileCreatedTime(path_for_info)
 
-    print("updated_time : {}".format(updated_time))
-    print("created_time : {}".format(created_time))
+    print("[DETAIL]updated_time : {}".format(updated_time))
+    print("[DETAIL]created_time : {}".format(created_time))
 
     return render_template(
         "detail.html",
@@ -103,19 +86,18 @@ def detail():
 @app.route('/delete', methods=['GET'])
 def delete():
     filename = request.args["filename"]
+    filepath_for_py = os.path.join("static", app.config["UPLOAD_FOLDER"], filename)
+    print("[DELETE]filename : {}".format(filename))
+    print("[DELETE]filepath_for_py : {}".format(filepath_for_py))
 
-    filepath = os.path.join("static", app.config["UPLOAD_FOLDER"], filename)
-    print("[DELETE]filepath : {}".format(filepath))
+    os.remove(filepath_for_py)
 
-    os.remove(filepath)
-
-    if os.path.exists(filepath) is None:
-        print("Deleted [{}]".format(filepath))
+    if os.path.exists(filepath_for_py) is None:
+        print("Delete completed [{}]".format(filepath_for_py))
 
     return render_template(
-        "index.html",
-        title="Top Page"
-    )
+        "index.html"
+        )
 
 
 def getFileUpdatedTime(filename):
@@ -137,7 +119,7 @@ def getFileCreatedTime(filename):
     return d
 
 
-def checkImgList(img_list):
+def checkImgExtension(img_list):
     checked_list = []
 
     for i, img in enumerate(img_list):
@@ -147,6 +129,17 @@ def checkImgList(img_list):
     return checked_list
 
 
+# ./image/filenameのパスを生成するメソッド
+def createImgPath(filename):
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+
+    if os.name == "nt":
+        filepath = converUrlForHtml(filepath)
+
+    return filepath
+
+
+# Windows環境でos.path.joinを使ってURL作成するとスラッシュがバックスラッシュになってしまうので修正するメソッド
 def converUrlForHtml(url):
     return url.replace("\\", "/")
 
