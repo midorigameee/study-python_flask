@@ -70,6 +70,14 @@ def confirm():
     )
 
 
+@app.route('/detail', methods=['GET'])
+def detail():
+    filename = request.args["filename"]
+    print("Query param : " + filename)
+    return render_template(
+        "detail.html")
+
+
 def checkImgList(img_list):
     checked_list = []
 
