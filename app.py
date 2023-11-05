@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, url_for, redirect
 import os
+import datetime
 
 
 app = Flask(__name__, static_folder="static")
@@ -73,9 +74,67 @@ def confirm():
 @app.route('/detail', methods=['GET'])
 def detail():
     filename = request.args["filename"]
-    print("Query param : " + filename)
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    print("filename : " + filename)
+    print("filepath : " + filepath)
+
+    if os.name == "nt":
+        print("For Windows:")
+        filepath = converUrlForHtml(filepath)
+        print("filepath : " + filepath)
+
+    path_for_info = os.path.join("static", filepath)
+
+    updated_time = getFileUpdatedTime(path_for_info)
+    created_time = getFileCreatedTime(path_for_info)
+
+    print("updated_time : {}".format(updated_time))
+    print("created_time : {}".format(created_time))
+
     return render_template(
-        "detail.html")
+        "detail.html",
+        filename=filename,
+        filepath=filepath,
+        updated_time=updated_time,
+        created_time=created_time
+        )
+
+
+@app.route('/delete', methods=['GET'])
+def delete():
+    filename = request.args["filename"]
+
+    filepath = os.path.join("static", app.config["UPLOAD_FOLDER"], filename)
+    print("[DELETE]filepath : {}".format(filepath))
+
+    os.remove(filepath)
+
+    if os.path.exists(filepath) is None:
+        print("Deleted [{}]".format(filepath))
+
+    return render_template(
+        "index.html",
+        title="Top Page"
+    )
+
+
+def getFileUpdatedTime(filename):
+    # 参考 https://www.mathpython.com/file-date
+    t = os.path.getmtime(filename)  # この時点ではUNIX時間
+    d = datetime.datetime.fromtimestamp(t)  # 一般の時間に変換
+
+    return d
+
+
+def getFileCreatedTime(filename):
+    if os.name == "nt": # Win用
+        t = os.path.getctime(filename)
+        d = datetime.datetime.fromtimestamp(t)
+    else:   # Mac用（Linuxは分からん、、、）
+        t = os.stat(filename).st_birthtime
+        d = datetime.datetime.fromtimestamp(t)
+
+    return d
 
 
 def checkImgList(img_list):

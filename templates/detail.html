@@ -1,5 +1,43 @@
 {% include "header.html" %}
+<script>
+function deleteFile(fname){
+    var result = window.confirm(fname + 'を削除しますか？');
+    if (result){
+        window.location = '/delete?filename=' + fname;
+    }
+}
+</script>
 <div class="d-flex justify-content-center">
     <h1>Files detail</h1>
+</div>
+<div class="container">
+    <div class="row">
+        <img class="img-thumbnail img-fluid" src="{{ url_for('static', filename=filepath) }}" alt="uploaded image">
+    </div>
+    <div class="row">
+        <div class="d-flex justify-content-center">
+            <div>ファイル名 : {{ filename }}</div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="d-flex justify-content-center">
+            <div>更新日 : {{ updated_time }}</div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="d-flex justify-content-center">
+            <div>作成日 : {{ created_time }}</div>
+        </div>
+    </div>
+    <div class="row mt-5">
+        <div class="d-flex justify-content-center">
+            <a href="javascript:deleteFile('{{ filename }}')">
+                <div class="btn btn-danger">削除</div>
+            </a>
+        </div>
+    </div>
+</div>
+<div class="d-flex justify-content-center">
+    <a class="mt-5" href="/">Topに戻る</a>
 </div>
 {% include "footer.html" %}
