@@ -6,23 +6,27 @@
     <p>選択した画像がどの女優に一番近いかを判定します</p>
 </div>
 <div class="container">
-    <div class="row">
-        {% for i in range(list_len) %}
-            <div class="col-3 justify-content-center">
-                <div class="d-flex justify-content-center">
-                    <div>{{ filename_list[i] }}</div>
+    <form action="{{url_for('actress_classify')}}" method="POST" enctype="multipart/form-data">
+
+        <div class="row">
+            {% for i in range(list_len) %}
+                <div class="col-3 justify-content-center">
+                    <div class="d-flex justify-content-center">
+                        <input type="radio" name="selected_image" class="radio" value="{{ filename_list[i] }}">
+                    </div>
+                    <a href="/detail?filename={{ filename_list[i] }}">
+                        <img class="img-thumbnail img-fluid" src="{{ url_for('static', filename=filepath_list[i]) }}" alt="uploaded image">
+                    </a>
                 </div>
-                <a href="/detail?filename={{ filename_list[i] }}">
-                    <img class="img-thumbnail img-fluid" src="{{ url_for('static', filename=filepath_list[i]) }}" alt="uploaded image">
-                </a>
-            </div>
-        {% endfor %}
-    </div>
-    <div class="row">
-        <div class="d-flex justify-content-center">
-            <p class="btn btn-primary mt-3">判定する</p>
+            {% endfor %}
         </div>
-    </div>
+        <div class="row">
+            <div class="d-flex justify-content-center">
+                <input type="submit" value="判定する" class="btn btn-primary mt-3">
+            </div>
+        </div>
+
+    </form>
 </div>
 <div class="d-flex justify-content-center">
     <a class="mt-5" href="/">Topに戻る</a>
