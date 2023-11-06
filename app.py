@@ -102,8 +102,40 @@ def delete():
 @app.route('/app_list', methods=['GET'])
 def app_list():
     return render_template(
-        "app_list.html",
-        title="Face checker"
+        "app_list.html"
+        )
+
+
+@app.route('/execute_app', methods=['GET'])
+def execute_app():
+    if "app_name" not in request.args:
+        print("[EXECUTE APP]App is not defined.")
+        return redirect(url_for('index'))
+    
+    print("[EXECUTE APP]request.args[app_name] : {}".format(request.args["app_name"]))
+
+    if request.args["app_name"] == "actress_classify":
+        return redirect(url_for('actress_classify'))
+    else:
+        print("[EXECUTE APP]App_name is not suitable.")
+        return redirect(url_for('index'))
+
+@app.route('/actress_classify')
+def actress_classify():
+    filename_list = checkImgExtension(os.listdir(os.path.join("static", app.config["UPLOAD_FOLDER"])))
+    filepath_list = []
+    for fname in filename_list:
+        fpath = createImgPath(fname)
+        filepath_list.append(fpath)
+
+    print("[ACTRESS CLASSIFY]filename_list : {}".format(filename_list))
+    print("[ACTRESS CLASSIFY]filepath_list : {}".format(filepath_list))
+
+    return render_template(
+        "actress_classify.html",
+        list_len=len(filename_list),
+        filename_list=filename_list,
+        filepath_list=filepath_list
         )
 
 
