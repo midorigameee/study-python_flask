@@ -99,10 +99,11 @@ def delete():
         "index.html"
         )
 
-@app.route('/face_checker', methods=['GET'])
-def face_checker():
+@app.route('/app_list', methods=['GET'])
+def app_list():
     return render_template(
-        "face_checker.html"
+        "app_list.html",
+        title="Face checker"
         )
 
 
