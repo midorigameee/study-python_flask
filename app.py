@@ -99,6 +99,12 @@ def delete():
         "index.html"
         )
 
+@app.route('/face_checker', methods=['GET'])
+def face_checker():
+    return render_template(
+        "face_checker.html"
+        )
+
 
 def getFileUpdatedTime(filename):
     # 参考 https://www.mathpython.com/file-date
