@@ -14,9 +14,7 @@
                     <div class="d-flex justify-content-center">
                         <input type="radio" name="selected_image" class="radio" value="{{ filename_list[i] }}">
                     </div>
-                    <a href="/detail?filename={{ filename_list[i] }}">
-                        <img class="img-thumbnail img-fluid" src="{{ url_for('static', filename=filepath_list[i]) }}" alt="uploaded image">
-                    </a>
+                    <img class="img-thumbnail img-fluid" src="{{ url_for('static', filename=filepath_list[i]) }}" alt="uploaded image">
                 </div>
             {% endfor %}
         </div>

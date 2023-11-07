@@ -1,10 +1,13 @@
 from flask import Flask, render_template, request, url_for, redirect
 import os
 import datetime
-
+import cv2
 
 app = Flask(__name__, static_folder="static")
 app.config["UPLOAD_FOLDER"] = "images"
+app.config["CASCADE_PATH"] = "cascade"
+app.config["CASCADE_NAME"] = "haarcascade_frontalface_default.xml"
+app.config["CLASSIFIER_PATH"] = "classifier"
 
 @app.route('/')
 def index():
@@ -138,9 +141,81 @@ def actress_classify():
     
     elif request.method == 'POST':
         filename = request.form['selected_image']
-        return render_template(
-            "index.html"
-            )
+        return redirect(url_for("actress_classify_result", filename=filename))
+
+
+@app.route('/actress_classify_result/<string:filename>')
+def actress_classify_result(filename):
+    result = detect_face(filename)
+    message = ""
+
+    if result is None:
+        message = "No face"
+        result = "None"
+    else:
+        result = converUrlForHtml(result)
+
+    return render_template(
+        "actress_classify_result.html",
+        result_path=result,
+        message=message
+        )
+    
+
+def detect_face(filename):
+    file_path = os.path.join("static", app.config["UPLOAD_FOLDER"], filename)
+    face_info = extract_maxsize_face(file_path)
+
+    if face_info is None:
+        print("画像が見つからないよ")
+        return None
+
+    if face_info["x"] == 0 and face_info["size"] == 0:
+        print("顔が見つからないよ")
+        return None
+
+    image = cv2.imread(file_path)
+    cv2.rectangle(image,
+        (face_info["x"], face_info["y"]),   # 始点（左上）の座標
+        (face_info["x"]+face_info["size"],face_info["y"]+face_info["size"]),    # 終点（右下）の座標
+        (0, 255, 0), thickness=2
+        )
+
+    temp_dir = os.path.join("static", "temp")
+    if os.path.exists(temp_dir):
+        for f in os.listdir(temp_dir):
+            os.remove(os.path.join(temp_dir, f))
+    else:
+        os.mkdir(temp_dir)
+
+    result_file = os.path.join(temp_dir, filename)
+    cv2.imwrite(result_file, image)
+
+    result_file_for_html = os.path.join("temp", filename)
+
+    return result_file_for_html
+
+
+def extract_maxsize_face(image_path):
+    if os.path.exists(image_path) is None:
+        print("image_path[{}] not exist.".format(image_path))
+        return None
+
+    image = cv2.imread(image_path)
+    image_grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    cascade_path = os.path.join("static", app.config["CASCADE_PATH"], app.config["CASCADE_NAME"])
+    cascade = cv2.CascadeClassifier(cascade_path)
+    face_list = cascade.detectMultiScale(image_grey, minSize=(200, 200))
+
+    face_info = {"x":0, "y":0, "size":0}
+    for (x, y, w, h) in face_list:  # 顔は正方形で検出するので常にw=hになる
+        # 一番大きい検出結果を検出対象とする
+        if w > face_info["size"]:
+            face_info["x"] = x
+            face_info["y"] = y
+            face_info["size"] = w
+
+    return face_info
 
 
 def getFileUpdatedTime(filename):
