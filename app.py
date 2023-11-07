@@ -2,6 +2,14 @@ from flask import Flask, render_template, request, url_for, redirect
 import os
 import datetime
 import cv2
+import numpy as np
+
+import torch
+import torch.nn as nn
+import torchvision
+from torchvision import transforms, datasets
+from torch.autograd import Variable
+
 
 app = Flask(__name__, static_folder="static")
 app.config["UPLOAD_FOLDER"] = "images"
@@ -148,19 +156,22 @@ def actress_classify():
 def actress_classify_result(filename):
     result = detect_face(filename)
     message = ""
+    classifier_result = ""
 
     if result is None:
         message = "No face"
         result = "None"
     else:
         result = converUrlForHtml(result)
+        classifier_result = useClassifier(face_path=os.path.join("static", "temp", "extracted_face.jpg"))
 
     return render_template(
         "actress_classify_result.html",
         result_path=result,
-        message=message
+        message=message,
+        classifier_result=classifier_result
         )
-    
+
 
 def detect_face(filename):
     file_path = os.path.join("static", app.config["UPLOAD_FOLDER"], filename)
@@ -174,12 +185,19 @@ def detect_face(filename):
         print("顔が見つからないよ")
         return None
 
+    # 画像の読み込み
     image = cv2.imread(file_path)
+
+    # 顔の部分だけ抽出して保存
+    extracted_face = image[face_info["y"]:face_info["y"]+face_info["size"], \
+                            face_info["x"]:face_info["x"]+face_info["size"]]
+    
     cv2.rectangle(image,
         (face_info["x"], face_info["y"]),   # 始点（左上）の座標
         (face_info["x"]+face_info["size"],face_info["y"]+face_info["size"]),    # 終点（右下）の座標
         (0, 255, 0), thickness=2
         )
+
 
     temp_dir = os.path.join("static", "temp")
     if os.path.exists(temp_dir):
@@ -189,7 +207,9 @@ def detect_face(filename):
         os.mkdir(temp_dir)
 
     result_file = os.path.join(temp_dir, filename)
+    extracted_face_file = os.path.join(temp_dir, "extracted_face.jpg")
     cv2.imwrite(result_file, image)
+    cv2.imwrite(extracted_face_file, extracted_face)
 
     result_file_for_html = os.path.join("temp", filename)
 
@@ -260,6 +280,62 @@ def createImgPath(filename):
 # Windows環境でos.path.joinを使ってURL作成するとスラッシュがバックスラッシュになってしまうので修正するメソッド
 def converUrlForHtml(url):
     return url.replace("\\", "/")
+
+
+def useClassifier(face_path):
+    # Hyper parameters
+    FACE_SIZE = 32
+    BATCH_SIZE = 10
+    
+    label = ["gacky", "kanna", "kasumi", "riho", "satomi", "tsubasa"]
+    class_num = 6   # 6人の分類
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    model = CNN_32(output_size=class_num).to(device)
+    model_name = os.path.join("static", "classifier", "model_actress.ckpt")
+    param = torch.load(model_name) # パラメータの読み込み
+    model.load_state_dict(param)
+
+
+    # ネットワークを推論モードに切り替える
+    model.eval()
+    face_image = cv2.imread(face_path)
+    size = (FACE_SIZE, FACE_SIZE)
+    face_image = cv2.resize(face_image, size)
+
+    with torch.no_grad():
+
+        # 学習済みモデルに抽出した顔画像を入力
+        x = np.transpose(face_image, (2, 0, 1))  # (縦, 横, ch)を(ch, 縦, 横)
+        x = np.array([x])
+        x = torch.Tensor(x)
+        x = Variable(x).to(device)
+
+        # 認識結果
+        outputs = model(x)
+        _, predicted = torch.max(outputs.data, 1)
+        answer = predicted[0]
+
+    return label[answer]
+
+class CNN_32(nn.Module):
+    def __init__(self, output_size):
+        super(CNN_32, self).__init__()
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, output_size)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
+        x = x.view(-1, 16 * 5 * 5)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
 
 
 if __name__ == "__main__":
